@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ross Gun Inventory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <section id="loginView" class="screen active">
+      <div class="card auth-card">
+        <div class="brand-lock">🔐</div>
+        <h1>Ross Gun Inventory</h1>
+        <p class="muted">Enter your passcode to continue.</p>
+        <form id="loginForm" class="stack">
+          <label class="field">
+            <span>Passcode</span>
+            <input id="loginPasscode" type="password" autocomplete="current-password" />
+          </label>
+          <button class="btn btn-primary" type="submit">Log In</button>
+        </form>
+        <p id="loginMessage" class="message"></p>
+      </div>
+    </section>
+
+    <section id="inventoryView" class="screen">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Inventory Dashboard</p>
+          <h1>Ross Gun Inventory</h1>
+        </div>
+
+        <div class="header-actions">
+          <button id="refreshButton" class="btn btn-secondary" type="button">Refresh</button>
+
+          <div class="menu-wrap">
+            <button id="settingsButton" class="btn btn-secondary" type="button" aria-haspopup="true" aria-expanded="false">
+              User Settings ▾
+            </button>
+            <div id="settingsMenu" class="menu hidden">
+              <button id="changePasscodeMenuItem" type="button">Change Passcode</button>
+              <button id="logoutMenuItem" type="button">Log Out</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content-shell">
+        <div class="table-card">
+          <div class="table-tools">
+            <div>
+              <h2>Registered Firearms</h2>
+              <p class="muted">Create, edit, and track your collection.</p>
+            </div>
+            <button id="openAddModalButton" class="btn btn-primary" type="button">Add Gun</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Make</th>
+                  <th>Model</th>
+                  <th>Serial Number</th>
+                  <th>Year</th>
+                  <th>Caliber</th>
+                  <th>Purchase Price (USD)</th>
+                  <th>Description</th>
+                  <th>Condition</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyState" class="empty-state hidden">
+            <div class="empty-icon">🗂️</div>
+            <h3>No guns added yet</h3>
+            <p>Add your first record to get started.</p>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <div id="gunModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="gunModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="gunModalTitle">Add Gun</h2>
+        <button class="icon-btn" id="closeGunModalButton" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <form id="gunForm" class="grid-form">
+        <input type="hidden" id="recordId" />
+        <label class="field"><span>Make</span><input id="make" type="text" /></label>
+        <label class="field"><span>Model</span><input id="model" type="text" /></label>
+        <label class="field"><span>Serial Number</span><input id="serialNumber" type="text" /></label>
+        <label class="field"><span>Year</span><input id="year" type="text" /></label>
+        <label class="field"><span>Caliber</span><input id="caliber" type="text" /></label>
+        <label class="field"><span>Purchase Price (USD)</span><input id="purchasePrice" type="number" step="0.01" /></label>
+        <label class="field field-span-2"><span>Description</span><textarea id="description" rows="4"></textarea></label>
+        <label class="field"><span>Condition</span><input id="condition" type="text" /></label>
+
+        <div class="modal-actions field-span-2">
+          <button class="btn btn-secondary" id="cancelGunButton" type="button">Cancel</button>
+          <button class="btn btn-primary" type="submit">Submit</button>
+        </div>
+      </form>
+
+      <p id="gunFormMessage" class="message"></p>
+    </div>
+  </div>
+
+  <div id="passcodeModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="passcodeModalTitle">
+    <div class="modal-card narrow">
+      <div class="modal-header">
+        <h2 id="passcodeModalTitle">Change Passcode</h2>
+        <button class="icon-btn" id="closePasscodeModalButton" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <form id="changePasscodeForm" class="stack">
+        <label class="field">
+          <span>Current Passcode</span>
+          <input id="currentPasscode" type="password" autocomplete="current-password" />
+        </label>
+        <label class="field">
+          <span>New Passcode</span>
+          <input id="newPasscode" type="password" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span>Re-enter New Passcode</span>
+          <input id="confirmNewPasscode" type="password" autocomplete="new-password" />
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="cancelPasscodeButton" type="button">Cancel</button>
+          <button class="btn btn-primary" type="submit">Save Passcode</button>
+        </div>
+      </form>
+
+      <p id="passcodeMessage" class="message"></p>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-card narrow">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle">Are you sure?</h2>
+        <button class="icon-btn" id="closeDeleteModalButton" type="button" aria-label="Close">✕</button>
+      </div>
+      <p class="muted">This will permanently remove the selected record.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelDeleteButton" type="button">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteButton" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+</body>
+</html>
