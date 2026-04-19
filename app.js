@@ -1,4 +1,4 @@
-let supabase = null;
+let supabaseClient = null;
 
 const loginView = document.getElementById('loginView');
 const inventoryView = document.getElementById('inventoryView');
