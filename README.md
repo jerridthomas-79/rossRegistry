@@ -1,0 +1,1 @@
+Ross Gun Inventory app. Setup: run supabase-schema.sql, fill config.js, enable GitHub Pages.
