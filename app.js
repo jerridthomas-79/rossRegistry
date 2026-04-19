@@ -1,14 +1,11 @@
-const supabase = window.supabase.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY);
+let supabase = null;
 
 const loginView = document.getElementById('loginView');
 const inventoryView = document.getElementById('inventoryView');
-
 const loginForm = document.getElementById('loginForm');
 const loginPasscode = document.getElementById('loginPasscode');
-
 const tableBody = document.getElementById('inventoryTableBody');
 const addBtn = document.getElementById('openAddModalButton');
-
 const modal = document.getElementById('gunModal');
 const gunForm = document.getElementById('gunForm');
 
@@ -18,8 +15,12 @@ function getPasscode(){
   return localStorage.getItem('passcode') || APP_CONFIG.DEFAULT_PASSCODE;
 }
 
-function setPasscode(p){
-  localStorage.setItem('passcode', p);
+function initSupabase(){
+  try {
+    supabase = window.supabase.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY);
+  } catch(e){
+    console.error('Supabase init failed', e);
+  }
 }
 
 loginForm.addEventListener('submit', (e)=>{
@@ -27,16 +28,14 @@ loginForm.addEventListener('submit', (e)=>{
   if(loginPasscode.value === getPasscode()){
     loginView.classList.remove('active');
     inventoryView.classList.add('active');
+    initSupabase();
     loadData();
   } else {
     alert('Wrong passcode');
   }
 });
 
-addBtn.addEventListener('click', ()=>{
-  modal.classList.remove('hidden');
-});
-
+addBtn.addEventListener('click', ()=> modal.classList.remove('hidden'));
 document.getElementById('closeGunModalButton').onclick = ()=> modal.classList.add('hidden');
 
 gunForm.addEventListener('submit', async (e)=>{
@@ -52,6 +51,8 @@ gunForm.addEventListener('submit', async (e)=>{
     condition: document.getElementById('condition').value
   };
 
+  if(!supabase) return alert('Database not connected');
+
   if(editId){
     await supabase.from('inventory_items').update(data).eq('id', editId);
   } else {
@@ -64,7 +65,20 @@ gunForm.addEventListener('submit', async (e)=>{
   loadData();
 });
 
+async function seedData(){
+  const { data } = await supabase.from('inventory_items').select('*');
+  if(data.length === 0){
+    await supabase.from('inventory_items').insert([
+      { make:'Glock', model:'19', serial_number:'G19-001', year:'2022', caliber:'9mm', purchase_price:550, description:'Compact reliable pistol', condition:'Excellent' },
+      { make:'Sig Sauer', model:'P320', serial_number:'SIG-320A', year:'2021', caliber:'9mm', purchase_price:600, description:'Modular striker-fired handgun', condition:'Very Good' },
+      { make:'Smith & Wesson', model:'M&P Shield', serial_number:'SW-SHLD', year:'2020', caliber:'9mm', purchase_price:450, description:'Slim carry pistol', condition:'Good' }
+    ]);
+  }
+}
+
 async function loadData(){
+  if(!supabase) return;
+  await seedData();
   const { data } = await supabase.from('inventory_items').select('*').order('id', { ascending: false });
   tableBody.innerHTML = '';
 
